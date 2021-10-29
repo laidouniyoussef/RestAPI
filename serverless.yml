@@ -1,0 +1,83 @@
+service: sls
+
+custom:
+  settings:
+    POSTES_TABLE: postes
+
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment: ${self:custom.settings}
+  iamRoleStatements:
+   - Effect: "Allow"
+     Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+     Resource:
+      - "arn:aws:dynamodb:region:*:table/${self:custom.settings.POSTES_TABLE}"
+
+  lambdaHashingVersion: 20201221
+  
+
+functions:
+  createPoste:
+    handler: handler.createPoste
+    events:
+    - http:
+        path: /poste
+        method: post
+  getAllPostes:
+    handler: handler.getAllPostes
+    events:
+    - http:
+        path: /postes
+        method: get
+  getPostes:
+    handler: handler.getPostes
+    events:
+    - http:
+        path: /postes/{number}
+        method: get
+  getPoste:
+    handler: handler.getPoste
+    events:
+    - http:
+        path: /poste/{id}
+        method: get
+  updatePoste:
+    handler: handler.updatePoste
+    events:
+    - http:
+        path: /poste/{id}
+        method: put
+  deletePoste:
+    handler: handler.deletePoste
+    events:
+    - http:
+        path: /poste/{id}
+        method: delete
+
+
+
+resources:
+  Resources:
+    PostesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.POSTES_TABLE}
